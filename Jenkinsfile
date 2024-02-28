@@ -55,21 +55,21 @@ pipeline {
       steps {
         script {
           withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-            sh "docker build -t adijaiswal/ekart:latest -f docker/Dockerfile ."
+            sh "docker build -t tirucloud/ekart:latest -f docker/Dockerfile ."
           }
         }
       }
     }
     stage('Trivy Scan') {
       steps {
-        sh "trivy image adijaiswal/ekart:latest > trivy-report.txt "
+        sh "trivy image tirucloud/ekart:latest > trivy-report.txt "
       }
     }
     stage('Docker Push Image') {
       steps {
         script {
           withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-            sh "docker push adijaiswal/ekart:latest"
+            sh "docker push tirucloud/ekart:latest"
           }
         }
       }
