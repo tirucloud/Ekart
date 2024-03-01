@@ -24,43 +24,40 @@ pipeline {
       }
     }
     stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv('sonar') {
-          sh ''
-          ' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=EKART -Dsonar.projectName=EKART \
--Dsonar.java.binaries=. '
-          ''
-        }
-      }
+     steps {
+    withSonarQubeEnv('sonar-server') {
+      sh '''
+        $SCANNER_HOME/bin/sonar-scanner \
+        -Dsonar.projectKey=EKART \
+        -Dsonar.projectName=EKART \
+        -Dsonar.java.binaries=.
+      '''
     }
+  }
+}
     stage('OWASP Dependency Check') {
       steps {
         dependencyCheck additionalArguments: ' --scan ./', odcInstallation: 'DC'
         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
       }
     }
+    
     stage('Build') {
       steps {
         sh "mvn package -DskipTests=true"
       }
     }
-    stage('Deploy To Nexus') {
-      steps {
-        withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-          sh "mvn deploy -DskipTests=true"
-        }
-      }
-    }
+   
     stage('Docker Build & tag Image') {
       steps {
         script {
-          withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+          withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
             sh "docker build -t tirucloud/ekart:latest -f docker/Dockerfile ."
           }
         }
       }
     }
-    stage('Trivy Scan') {
+     stage('Trivy Scan') {
       steps {
         sh "trivy image tirucloud/ekart:latest > trivy-report.txt "
       }
@@ -68,7 +65,7 @@ pipeline {
     stage('Docker Push Image') {
       steps {
         script {
-          withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+          withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
             sh "docker push tirucloud/ekart:latest"
           }
         }
@@ -82,6 +79,6 @@ pipeline {
         }
       }
     }
+    
   }
-}
 }
